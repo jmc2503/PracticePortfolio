@@ -1,7 +1,27 @@
+from collections import defaultdict
+
+
 class ListNode:
     def __init__(self, val=0, next=None):
         self.val = val
         self.next = next
+        self.current = self
+    
+    def __repr__(self):
+        return f"ListNode(val={self.val}, next={self.next})"
+
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        if self.current == None:
+            raise StopIteration
+        else:
+            res = self.current
+            self.current = self.current.next
+            return res
+        
+    
 
 class DoubleListNode:
     def __init__(self, val=0, next=None, prev=None):
@@ -102,13 +122,105 @@ def string_methods():
     A.endswith("o")
 
 def dict_methods():
-    pass
+    A = {}
+    A.get("fortnite", 0) #look for key, if not there, give it default value
+    A.items()
+    A.keys() #returns all keys
+    A.pop("fortnite") #removes key and returns value
+    A.values() #returns all values
 
-def dfs():
-    pass
+    B = defaultdict(list)
 
-def bfs():
-    pass
 
-def binary_search():
-    pass
+def dfs(root):
+    if root == None:
+        return
+    
+    left = dfs(root.left)
+    right = dfs(root.right)
+
+def bfs(root):
+    if root is None:
+        return
+    
+    q = []
+    res = []
+
+    q.append(root)
+    curr_level = 0
+
+    while q:
+        len_q = len(q)
+        res.append([])
+
+        for _ in range(len_q):
+            node = q.pop(0)
+            res[curr_level].append(node.val)
+
+            if node.left is not None:
+                q.append(node.left)
+
+            if node.right is not None:
+                q.append(node.right)
+
+        curr_level += 1
+    
+    return res
+
+def binary_search(nums, target):
+    left, right = 0, len(nums) - 1
+
+    while left <= right:
+        mid = (left + right) // 2
+
+        if nums[mid] == target:
+            return mid
+        elif nums[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    
+    return -1
+
+class Graph:
+    def __init__(self):
+        self.graph = defaultdict(list)
+    
+    def add_edge(self, u, v):
+        self.graph[u].append(v)
+    
+    def bfs(self, start):
+        visited = [False] * (len(self.graph) + 1)
+        
+        queue = []
+
+        queue.append(start)
+        visited[start] = True
+
+        while queue:
+            s = queue.pop(0)
+            print(s, end= " ")
+
+            for i in self.graph[s]:
+                if not visited[i]:
+                    queue.append(i)
+                    visited[i] = True
+
+x = ListNode(0, None)
+y = ListNode(1, None)
+z = ListNode(2, None)
+x.next = y
+y.next = z
+
+for node in x:
+    print(node)
+
+
+def add(x, y):
+    return x + y
+
+def divide(x, y):
+    if y == 0:
+        raise ValueError("Divide by 0")
+    return x / y
+

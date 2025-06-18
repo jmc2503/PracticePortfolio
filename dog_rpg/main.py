@@ -11,6 +11,8 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
+        self.skill_tree_open = False
+
         self.SPAWNENEMY = pygame.USEREVENT + 1
         pygame.time.set_timer(self.SPAWNENEMY, 2000)
     
@@ -42,15 +44,58 @@ class Game:
                     if self.player.facing == 'right':
                         Ball(self, self.player.rect.x+TILESIZE//2, self.player.rect.y+TILESIZE//4, 'right')
             
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for skill in skill_list:
+                    if skill.is_clicked(event.pos):
+                        if not skill.unlocked:
+                            skill.unlocked = True
+                            skill.effect(self)
+                            self.skill_tree_open = False
+
+            
 
     def update(self):
-        self.all_sprites.update()
+        if not self.skill_tree_open:
+            self.all_sprites.update()
 
     def draw(self):
         self.screen.fill(BLACK)
         self.all_sprites.draw(self.screen)
+        
+        if self.skill_tree_open:
+            self.drawskilltree()
+        
         self.clock.tick(FPS)
         pygame.display.update()
+    
+    def drawskilltree(self):
+        x, y = 10, 1
+        
+        q = []
+        q.append(skill_tree_root)
+        curr_level = 0
+
+        while q:
+            len_q = len(q)
+            spawn_x = x - 1.5*len_q
+
+            for i in range(len_q):
+                node = q.pop()
+                node.val.x = (spawn_x + i * 2) * TILESIZE
+                node.val.y = (y + curr_level * 1.5) * TILESIZE
+                node.val.draw(self.screen)
+
+                if node.val.parent:
+                    pygame.draw.line(self.screen, (255, 255, 255), (node.val.x, node.val.y), (node.val.parent.x, node.val.parent.y), 2)
+
+
+                if node.left is not None:
+                    q.append(node.left)
+
+                if node.right is not None:
+                    q.append(node.right)
+            
+            curr_level += 1
 
     def main(self):
         while self.playing:
