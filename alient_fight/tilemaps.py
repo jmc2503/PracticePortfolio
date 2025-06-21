@@ -10,8 +10,7 @@ class Background:
                                 background_sheet.get_sprite(32, 0, self.width, self.height),
                                 background_sheet.get_sprite(0, 32, self.width, self.height),
                                 background_sheet.get_sprite(32, 32, self.width, self.height),
-                                background_sheet.get_sprite(0, 64, self.width, self.height)
-                                ]
+                                background_sheet.get_sprite(0, 64, self.width, self.height)]
 
 class Ground(pygame.sprite.Sprite):
     def __init__(self, game, x, y, background):

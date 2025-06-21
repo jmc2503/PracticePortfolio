@@ -39,6 +39,10 @@ class Player(pygame.sprite.Sprite):
 
         self.exp = 0
         self.level = 1
+        self.new_level_exp = 50
+
+        self.max_health = 100
+        self.current_health = self.max_health
 
         self.items = []
 
@@ -54,9 +58,14 @@ class Player(pygame.sprite.Sprite):
     
         self.score = 0
 
+        self.exp_bar = ProgressBar(self.game, self.x, self.y, self.new_level_exp)
+        self.health_bar = HealthBar(self.game, self.max_health)
+
     def update(self):
         self.movement()
+        self.collide()
         self.animate()
+        self.check_health()
         self.check_level()
 
         self.rect.x += self.x_change
@@ -65,25 +74,44 @@ class Player(pygame.sprite.Sprite):
         self.x_change, self.y_change = 0, 0
     
     def check_level(self):
-        if self.exp >= 20:
+        self.exp_bar.set_value(self.exp)
+
+        if self.exp >= self.new_level_exp:
             self.level += 1
             self.exp = 0
+            self.exp_bar.set_value(self.exp)
             self.game.skill_tree_open = True
+    
+    def check_health(self):
+        self.health_bar.set_value(self.current_health)
+
+        if self.current_health <= 0:
+            self.kill()
+            self.game.playing = False
 
     def movement(self):
         keys = pygame.key.get_pressed()
+        dx, dy = 0, 0
         if keys[pygame.K_LEFT]:
-            self.x_change -= self.speed
+            dx -= 1
             self.facing = 'left'
         if keys[pygame.K_RIGHT]:
-            self.x_change += self.speed
+            dx += 1
             self.facing = 'right'
         if keys[pygame.K_UP]:
-            self.y_change -= self.speed
+            dy -= 1
             self.facing = 'up'
         if keys[pygame.K_DOWN]:
-            self.y_change += self.speed
+            dy += 1
             self.facing = 'down'
+        
+        length = math.hypot(dx, dy)
+        if length != 0:
+            dx /= length
+            dy /= length
+
+        self.x_change += dx * self.speed
+        self.y_change += dy * self.speed
     
     def animate(self):
         if self.facing == 'up':
@@ -128,6 +156,11 @@ class Player(pygame.sprite.Sprite):
     
     def get_item(self, item):
         self.items.append(item)
+
+    def collide(self):
+        hits = pygame.sprite.spritecollide(self, self.game.enemies, True)
+        for enemy in hits:
+            self.current_health -= 20
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -326,6 +359,120 @@ class Shield(pygame.sprite.Sprite):
         self.height = TILESIZE + 5
 
         self.image = pygame.Surface([self.width, self.height])
+
+class Button:
+    def __init__(self, x, y, width, height, fg, bg, content, fontsize):
+        self.font = pygame.font.SysFont(None, fontsize)
+        self.content = content
+
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+        self.fg = fg
+        self.bg = bg
+        
+        self.image = pygame.Surface((self.width, self.height))
+        self.image.fill(self.bg)
+        self.rect = self.image.get_rect()
+
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+        self.text = self.font.render(self.content, True, self.fg)
+        self.text_rect = self.text.get_rect(center=(self.width/2, self.height / 2))
+        self.image.blit(self.text, self.text_rect)
+    
+    def is_pressed(self, pos, pressed):
+        if self.rect.collidepoint(pos):
+            if pressed[0]:
+                return True
+            
+        return False
+
+class HealthBar(pygame.sprite.Sprite):
+    def __init__(self, game, max_value):
+        self.game = game
+        self._layer = UI_ELEMENTS
+        self.groups = self.game.all_sprites
+        pygame.sprite.Sprite.__init__(self, self.groups)
+
+        self.x = 10
+        self.y = 40
+        self.width = TILESIZE * 3
+        self.height = TILESIZE // 2
+
+        self.image = pygame.Surface((self.width, self.height))
+        self.rect = self.image.get_rect()
+
+        self.font = pygame.font.Font(None, 24)
+
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+        self.max_value = max_value
+        self.current_value = self.max_value
+        
+        self.animate()
+
+    def update(self):
+        pass
+
+    def animate(self):
+        self.image.fill(GREY)
+
+        fill_width = int((self.current_value / self.max_value) * self.width)
+
+        pygame.draw.rect(self.image, GREEN, (0, 0, fill_width, self.height))
+        
+        text_surf = self.font.render(str(self.current_value), True, (0, 0, 0))
+        text_rect = text_surf.get_rect(midleft=(5, self.height // 2 + 1))
+        self.image.blit(text_surf, text_rect)
+
+    def set_value(self, new_val):
+        if new_val != self.current_value:
+            self.current_value = new_val % self.max_value
+            self.animate()
+
+class ProgressBar(pygame.sprite.Sprite):
+    def __init__(self, game, x, y, max_value):
+        self.game = game
+        self._layer = UI_ELEMENTS
+        self.groups = self.game.all_sprites
+        pygame.sprite.Sprite.__init__(self, self.groups)
+
+        self.vertical_offset = TILESIZE // 4
+
+        self.x = TILESIZE * x
+        self.y = TILESIZE * y - self.vertical_offset
+        self.width = TILESIZE
+        self.height = TILESIZE // 4
+
+        self.image = pygame.Surface((self.width, self.height))
+        self.rect = self.image.get_rect()
+
+        self.max_value = max_value
+        self.current_value = 0
+
+        self.animate()
+    
+    def update(self):
+        self.rect.x = self.game.player.rect.x
+        self.rect.y = self.game.player.rect.y - self.vertical_offset
+
+    def animate(self):
+        self.image.fill(GREY)
+
+        fill_width = int((self.current_value / self.max_value) * self.width)
+
+        pygame.draw.rect(self.image, GREEN, (0, 0, fill_width, self.height))
+    
+    def set_value(self, new_val):
+        if new_val != self.current_value:
+            self.current_value = new_val % self.max_value
+            self.animate()
+
 
 
 
