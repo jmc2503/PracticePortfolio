@@ -24,6 +24,9 @@ class Game:
         self.SPAWNENEMY = pygame.USEREVENT + 1
         pygame.time.set_timer(self.SPAWNENEMY, 2000)
 
+        self.SPAWNSHIELD = pygame.USEREVENT + 2
+        pygame.time.set_timer(self.SPAWNSHIELD, 15000)
+
         #Characters/Game Elements
         self.character_front_spritesheet = Spritesheet("./img/front_walk.png")
         self.character_back_spritesheet = Spritesheet("./img/back_walk.png")
@@ -51,7 +54,7 @@ class Game:
         for i in range(self.rows):
             for j in range(self.cols):
                 Ground(self, j, i, self.sand_bg)
-
+        
     def events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -60,8 +63,13 @@ class Game:
 
             if event.type == self.SPAWNENEMY:
                 if not self.skill_tree_open:
-                    x, y = self.randomspawn()
+                    x, y = self.randomspawn("ENEMY")
                     Enemy(self, x, y)
+            
+            if event.type == self.SPAWNSHIELD:
+                if not self.skill_tree_open:
+                    x, y = self.randomspawn("SHIELD")
+                    Shield(self, x, y)
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
@@ -78,9 +86,10 @@ class Game:
                 for skill in skill_list:
                     if skill.is_clicked(event.pos):
                         if not skill.unlocked:
-                            skill.unlocked = True
-                            skill.effect(self)
-                            self.skill_tree_open = False
+                            if skill.parent is None or skill.parent.unlocked:
+                                skill.unlocked = True
+                                skill.effect(self)
+                                self.skill_tree_open = False
 
     def update(self):
         if not self.skill_tree_open:
@@ -152,22 +161,29 @@ class Game:
             self.update()
             self.draw()
     
-    def randomspawn(self):
-        side = random.randint(0, 3)
+    def randomspawn(self, type):
+        
         x, y = 0, 0
+        
+        if type == "SHIELD":
+            x = random.randint(0, WIN_WIDTH // TILESIZE)
+            y = random.randint(0, WIN_HEIGHT // TILESIZE)
 
-        if side == 0: #spawn top
-            x = random.randint(0, 19)
-            y = 0
-        elif side == 1: #spawn bottom
-            x = random.randint(0, 19)
-            y = 15
-        elif side == 2: #spawn left
-            x = 0
-            y = random.randint(0, 14)
-        elif side == 3: #spawn right
-            x = 19
-            y = random.randint(0, 14)
+        if type == "ENEMY":
+            side = random.randint(0, 3)
+
+            if side == 0: #spawn top
+                x = random.randint(0, 19)
+                y = 0
+            elif side == 1: #spawn bottom
+                x = random.randint(0, 19)
+                y = 15
+            elif side == 2: #spawn left
+                x = 0
+                y = random.randint(0, 14)
+            elif side == 3: #spawn right
+                x = 19
+                y = random.randint(0, 14)
     
         return x, y
 

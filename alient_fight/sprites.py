@@ -44,7 +44,7 @@ class Player(pygame.sprite.Sprite):
         self.max_health = 100
         self.current_health = self.max_health
 
-        self.items = []
+        self.shield = None
 
         self.front_animations = [self.game.character_front_spritesheet.get_sprite(0,0, self.width, self.height),
                            self.game.character_front_spritesheet.get_sprite(32, 0, self.width, self.height),
@@ -77,6 +77,7 @@ class Player(pygame.sprite.Sprite):
         self.exp_bar.set_value(self.exp)
 
         if self.exp >= self.new_level_exp:
+            Enemy.speed += 1
             self.level += 1
             self.exp = 0
             self.exp_bar.set_value(self.exp)
@@ -149,20 +150,19 @@ class Player(pygame.sprite.Sprite):
                 if self.animation_loop >= 4:
                     self.animation_loop = 0
 
-        
-    def check_items(self):
-        pass
-
-    
-    def get_item(self, item):
-        self.items.append(item)
-
     def collide(self):
         hits = pygame.sprite.spritecollide(self, self.game.enemies, True)
         for enemy in hits:
-            self.current_health -= 20
+            if self.shield is None:
+                self.current_health -= 20
+            else:
+                self.shield.kill()
+                self.shield = None
 
 class Enemy(pygame.sprite.Sprite):
+    
+    speed = 1
+    
     def __init__(self, game, x, y):
         self.game = game
         self._layer = ENEMY_LAYER
@@ -184,6 +184,8 @@ class Enemy(pygame.sprite.Sprite):
 
         self.animation_loop = 0
         self.animation_speed = 0.3
+
+        self.enemy_speed = Enemy.speed
 
         self.enemy_animations = [self.game.enemy_spritesheet.get_sprite(0, 0, self.width, self.height),
                                  self.game.enemy_spritesheet.get_sprite(32, 0, self.width, self.height),
@@ -209,8 +211,8 @@ class Enemy(pygame.sprite.Sprite):
         distance_total = max(0.1, math.sqrt((distance_x)**2 + (distance_y)**2))
         distance_x, distance_y = distance_x/distance_total, distance_y/distance_total
 
-        self.x_change = ENEMY_SPEED * distance_x
-        self.y_change = ENEMY_SPEED * distance_y
+        self.x_change = self.enemy_speed * distance_x
+        self.y_change = self.enemy_speed * distance_y
     
     def animate(self):
         self.image = self.enemy_animations[math.floor(self.animation_loop)]
@@ -348,17 +350,45 @@ class Shield(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
         self.game = game
 
-        self._layer = PLAYER_LAYER
+        self._layer = ENEMY_LAYER #render underneath the player
         self.groups = self.game.all_sprites
         pygame.sprite.Sprite.__init__(self, self.groups)
 
         
         self.x = TILESIZE * x
         self.y = TILESIZE * y
-        self.width = TILESIZE + 5
-        self.height = TILESIZE + 5
+        self.width = TILESIZE // 2
+        self.height = TILESIZE // 2
 
         self.image = pygame.Surface([self.width, self.height])
+        self.image.fill(BLUE)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+        self.equipped = False
+
+    def update(self):
+        self.collide()
+
+        if self.equipped:
+            self.rect.x = self.game.player.rect.x
+            self.rect.y = self.game.player.rect.y
+    
+    def collide(self):
+        hits = pygame.sprite.spritecollide(self, [self.game.player], False)
+        if hits and self.game.player.shield == None:
+            
+            self.width = TILESIZE
+            self.height = TILESIZE
+            self.image = pygame.Surface([self.width, self.height])
+            self.image.fill(BLUE)
+            self.rect = self.image.get_rect()
+
+            self.game.player.shield = self
+
+            self.equipped = True
 
 class Button:
     def __init__(self, x, y, width, height, fg, bg, content, fontsize):
