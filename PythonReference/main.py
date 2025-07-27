@@ -206,14 +206,14 @@ class Graph:
                     queue.append(i)
                     visited[i] = True
 
-x = ListNode(0, None)
-y = ListNode(1, None)
-z = ListNode(2, None)
-x.next = y
-y.next = z
+# x = ListNode(0, None)
+# y = ListNode(1, None)
+# z = ListNode(2, None)
+# x.next = y
+# y.next = z
 
-for node in x:
-    print(node)
+# for node in x:
+#     print(node)
 
 
 def add(x, y):
@@ -224,3 +224,43 @@ def divide(x, y):
         raise ValueError("Divide by 0")
     return x / y
 
+
+def mergesort(list):
+    if len(list) <= 1:
+        return list
+
+    size = len(list)
+
+
+    left_list = mergesort(list[0:size//2])
+    right_list = mergesort(list[size//2:size])
+
+    if left_list == None:
+        return right_list
+    if right_list == None:
+        return left_list
+
+    if left_list[size//2-1] <= right_list[0]:
+        left_list.extend(right_list)
+        return left_list
+    else:
+        right_list.extend(left_list)
+        return right_list
+    
+#m x n grid
+def gridpaths(m, n):
+    memo = {}
+
+    for i in range(m):
+        memo[(i, 0)] = 1
+    
+    for j in range(n):
+        memo[(0, j)] = 1
+
+    for i in range(1, m):
+        for j in range(1, n):
+            memo[(i,j)] = memo[(i-1,j)] + memo[(i, j-1)]
+    
+    return memo[(m-1, n-1)]
+
+print(gridpaths(3, 3))

@@ -1,5 +1,6 @@
 import "../css/AlbumCard.css";
 import { FaHeadphones } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 interface AlbumCardProps {
   album: {
@@ -14,12 +15,14 @@ interface AlbumCardProps {
 function AlbumCard({ album }: AlbumCardProps) {
   return (
     <div className="album-card">
-      <div className="album-art">
-        <img
-          src={album.artworkUrl100.replace(/100x100/, "600x600")}
-          alt={album.collectionName}
-        ></img>
-      </div>
+      <Link to={`/album/${album.collectionId}`}>
+        <div className="album-art">
+          <img
+            src={album.artworkUrl100.replace(/100x100/, "600x600")}
+            alt={album.collectionName}
+          ></img>
+        </div>
+      </Link>
       <div className="album-buttons">
         <button className="favorite-btn">❤</button>
         <button className="listened-btn">
